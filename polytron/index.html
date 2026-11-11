@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Pesanan Pembelian POLYTRON</title>
+<!-- Versi GitHub Pages dashboard penjualan (arahan Kak Intan 29 Okt 2026: dibuka dengan sandi, hanya-baca).
+     Dibuat oleh skrip\bangun_web_penjualan.py dari index.html dashboard penjualan; data.json terkunci AES-GCM
+     (kunci dari sandi lewat PBKDF2-SHA256), sama dengan dashboard pajak web. Jangan diedit di sini - edit sumbernya. -->
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: #11171d; color: #e6ecf1; font: 17px/1.45 "Aptos Narrow", "Archivo Narrow", "Arial Narrow", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #masuk { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5vh; padding: 4vh 0 6vh; overflow: hidden; text-align: center; text-transform: uppercase; }
+  #masuk .isi-masuk { width: min(520px, 100%); padding-inline: 16px; display: flex; flex-direction: column; gap: 14px; }
+  #masuk .raksasa { width: 100%; opacity: .4; }
+  #masuk .raksasa svg { display: block; width: 100%; height: auto; }
+  #masuk .raksasa text { font-family: "Archivo", "Arial Black", sans-serif; font-weight: 800; }
+  #masuk h1 { margin: 0; font-weight: 600; letter-spacing: .3em; font-size: 22px; color: #9aa8b5; }
+  #sandi { width: 100%; height: 64px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .14); background: #2b6382; color: #fff;
+    font: 600 22px "Aptos Narrow", "Archivo Narrow", sans-serif; letter-spacing: .3em; text-align: center; padding: 0 28px; outline: none; }
+  #sandi::placeholder { color: rgba(255, 255, 255, .9); letter-spacing: .04em; text-transform: uppercase; }
+  #sandi:focus { background: #2f6d8f; box-shadow: 0 0 0 4px rgba(111, 179, 210, .28); }
+  #masuk button { height: 64px; font: 600 22px "Aptos Narrow", "Archivo Narrow", sans-serif; letter-spacing: .08em; text-transform: uppercase; border: 1px solid rgba(255, 255, 255, .22); border-radius: 999px; background: transparent; color: #e6ecf1; cursor: pointer; }
+  #masuk button:hover { background: #e6ecf1; color: #11171d; }
+  #galat { color: #f08a80; min-height: 22px; font-size: 16px; font-weight: 600; }
+  #masuk .catatan { color: #9aa8b5; font-size: 15px; margin: 6px 0 0; }
+  #webKaki { text-align: center; color: #8a97a3; font-size: 13px; letter-spacing: .06em; padding: 8px 16px 32px; }
+  #webKaki a { color: #6fb3d2; }
+</style>
+</head>
+<body>
+<form id="masuk" autocomplete="on">
+  <div class="raksasa" aria-label="POLYTRON"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2468.89 566.93" fill="currentColor" aria-hidden="true">
+    <text x="0" y="546" font-size="760" textLength="2468.89" lengthAdjust="spacingAndGlyphs">POLYTRON</text></svg></div>
+  <div class="isi-masuk">
+    <h1>Pesanan Pembelian POLYTRON</h1>
+    <input type="text" name="username" value="pabrik-polytron" autocomplete="username" hidden>
+    <input id="sandi" type="password" autocapitalize="characters" autocorrect="off" spellcheck="false" name="password" autocomplete="current-password" placeholder="Sandi" required>
+    <div id="galat"></div>
+    <button type="submit">Masuk</button>
+    <p class="catatan">Isi halaman ini rahasia perusahaan. Jangan bagikan sandi, tangkapan layar, atau isinya kepada pihak lain.</p>
+  </div>
+</form>
+
+<div id="isi" hidden></div>
+<p id="webKaki" hidden>Data <span id="webDibuat"></span> dari sistem PT Svarna Dipa, hanya untuk dilihat. Pertanyaan soal pesanan hubungi bagian pembelian kami. &middot; <a href="#" id="webKeluar">Kunci lagi</a></p>
+
+<template id="halaman"><!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pesanan Pembelian</title>
+<!-- Halaman pabrik (Kak Intan 30 Okt 2026): pesanan pembelian PT Svarna Dipa ke satu pabrik/merek,
+     bisa disaring per cabang. Dibungkus web_kerangka.html oleh skrip\bangun_web_pabrik.py; datanya
+     data/pabrik.json (hanya baris merek itu). Tanpa harga, stok, atau penjualan. -->
+<style>
+  body { margin: 0; background: #11171d; }
+  .pb { --bg: #11171d; --kartu: #18212a; --garis: #2a3641; --teks: #e6ecf1; --redup: #9aa8b5; --aksen: #6fb3d2; --ok: #7cc49a; --warn: #e5b96a;
+    max-width: 1180px; margin: 0 auto; padding: 20px 16px 8px; color: var(--teks); font: 16px/1.45 "Aptos Narrow", "Archivo Narrow", "Arial Narrow", system-ui, sans-serif; }
+  .pb h1 { margin: 0; font-size: 28px; letter-spacing: .02em; }
+  .pb .sub { color: var(--redup); margin: 4px 0 18px; }
+  .pb .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .pb .chip { border: 1px solid var(--garis); background: var(--kartu); color: var(--teks); border-radius: 999px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  .pb .chip b { color: var(--redup); font-weight: 600; margin-left: 6px; }
+  .pb .chip[aria-pressed="true"] { background: var(--aksen); border-color: var(--aksen); color: #0d1418; }
+  .pb .chip[aria-pressed="true"] b { color: #0d1418; }
+  .pb .ringkas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .pb .kotak { background: var(--kartu); border: 1px solid var(--garis); border-radius: 12px; padding: 14px 16px; }
+  .pb .kotak .l { color: var(--redup); font-size: 14px; }
+  .pb .kotak .n { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pb .kotak .k { color: var(--redup); font-size: 13px; }
+  .pb section { margin-bottom: 26px; }
+  .pb h2 { font-size: 19px; margin: 0 0 4px; }
+  .pb .ket { color: var(--redup); font-size: 14px; margin: 0 0 10px; }
+  .pb .alat { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pb input[type=search] { flex: 1 1 220px; background: var(--kartu); border: 1px solid var(--garis); color: var(--teks); border-radius: 8px; padding: 8px 12px; font: inherit; }
+  .pb button.unduh { background: transparent; border: 1px solid var(--garis); color: var(--aksen); border-radius: 8px; padding: 8px 12px; font: inherit; cursor: pointer; }
+  .pb .gulir { overflow-x: auto; border: 1px solid var(--garis); border-radius: 10px; }
+  .pb table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .pb th, .pb td { padding: 8px 10px; border-bottom: 1px solid var(--garis); text-align: left; white-space: nowrap; }
+  .pb th { position: sticky; top: 0; background: #1d2731; color: var(--redup); font-weight: 600; cursor: pointer; user-select: none; }
+  .pb td.a, .pb th.a { text-align: right; font-variant-numeric: tabular-nums; }
+  .pb td.nama { white-space: normal; min-width: 220px; }
+  .pb tr.jumlah td { font-weight: 700; background: #1a232c; }
+  .pb .kosong { color: var(--redup); padding: 16px; text-align: center; }
+  .pb .kembali { background: none; border: 0; color: var(--redup); font: inherit; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; padding: 0; margin-bottom: 14px; }
+  .pb .kembali:hover { color: var(--teks); }
+  .pb .label-menu { color: var(--aksen); letter-spacing: .25em; font-weight: 700; font-size: 15px; margin: 18px 0 10px; text-transform: uppercase; }
+  .pb .grid-cab { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .pb .kartu-cab { min-height: 170px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center;
+    background: linear-gradient(160deg, #1d2731, #161e26); border: 1px solid var(--garis); border-radius: 8px; color: var(--teks); font: inherit; cursor: pointer; padding: 24px 14px 16px; }
+  .pb .kartu-cab:hover, .pb .kartu-cab:focus-visible { border-color: var(--aksen); outline: none; }
+  .pb .kartu-cab .nm { font-size: 30px; font-weight: 700; letter-spacing: .03em; line-height: 1.15; }
+  .pb .kartu-cab .isi { color: var(--teks); font-size: 15px; }
+  .pb .kartu-cab .jenis { color: var(--redup); font-size: 13px; font-weight: 700; letter-spacing: .12em; }
+  .pb .kartu-cab.kosong-cab .nm, .pb .kartu-cab.kosong-cab .isi { opacity: .55; }
+  .pb .pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 13px; border: 1px solid var(--garis); color: var(--warn); }
+</style>
+</head>
+<body>
+<div class="pb" id="pb"><p class="sub">Memuat…</p></div>
+<script>
+(async () => {
+  const akar = document.getElementById("pb");
+  const nf = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
+  const tglId = (s) => s ? new Date(s + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "";
+  const el = (tag, at = {}, ...anak) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(at)) {
+      if (v == null || v === false) continue;
+      if (k === "text") n.textContent = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const a of anak.flat()) if (a != null && a !== "") n.append(a instanceof Node ? a : String(a));
+    return n;
+  };
+  let D;
+  try { D = await (await fetch("data/pabrik.json")).json(); }
+  catch (e) { akar.replaceChildren(el("p", { class: "sub", text: "Data tidak bisa dibuka: " + e.message })); return; }
+
+  // S.cabang: null = menu pilih cabang (tampilan awal), "" = semua cabang, selain itu nama cabang
+  const S = { cabang: null, cari: { pesan: "", po: "", datang: "" }, urut: {} };
+  // Tangerang digabung ke Jakarta di data perusahaan (keputusan Kak Intan 23 Okt 2026), jadi kartunya membuka Jakarta
+  const GABUNG = { TANGERANG: "JAKARTA" };
+  const pilihCab = (c) => (c == null ? null : GABUNG[c] || c);
+  try { const c = new URLSearchParams(location.search).get("cabang"); if (c != null) S.cabang = pilihCab(c.toUpperCase() === "SEMUA" ? "" : c.toUpperCase()); } catch (e) {}
+  const namaCab = (c) => c.split(" ").map((w) => w[0] + w.slice(1).toLowerCase()).join(" ");
+  const CABANG_TETAP = ["BANDUNG", "GRESIK", "JAKARTA", "KALIMANTAN TIMUR", "LAMPUNG", "MAKASSAR", "MEDAN", "PALEMBANG", "TANGERANG"];
+  const cabangSemua = [...new Set([...CABANG_TETAP.filter((c) => !GABUNG[c]), ...[...D.pesanan, ...D.po, ...D.datang].map((r) => r.cabang)])].sort();
+
+  // tiap tabel: kolom [judul, kunci, angka?]
+  const TABEL = {
+    pesan: { judul: "Pesanan bulan " + D.bulan_teks, ket: "Jumlah yang sudah kami tetapkan untuk dipesan bulan ini, per barang per cabang tujuan.",
+      kolom: [["PO Jumat", "minggu"], ["Cabang", "cabang"], ["Kode", "item"], ["Nama barang", "nama"], ["Qty", "qty", 1], ["Program", "program"]], baris: D.pesanan, jumlah: "qty" },
+    po: { judul: "PO belum diterima penuh", ket: "Sisa pesanan pembelian di sistem kami yang barangnya belum datang (PO " + D.po_hari + " hari terakhir).",
+      kolom: [["Tanggal", "tgl"], ["No. PO", "nomor"], ["Cabang", "cabang"], ["Kode", "item"], ["Nama barang", "nama"], ["Sisa qty", "sisa", 1]], baris: D.po, jumlah: "sisa" },
+    datang: { judul: "Barang sudah diterima", ket: "Penerimaan barang (faktur pembelian) sejak " + tglId(D.datang_dari) + ".",
+      kolom: [["Tanggal", "tgl"], ["No. faktur", "nomor"], ["Cabang", "cabang"], ["Kode", "item"], ["Nama barang", "nama"], ["Qty", "qty", 1]], baris: D.datang, jumlah: "qty" },
+  };
+  const saring = (id) => {
+    const q = S.cari[id].trim().toUpperCase();
+    return TABEL[id].baris.filter((r) => (!S.cabang || r.cabang === S.cabang) &&
+      (!q || [r.item, r.nama, r.nomor, r.program].some((v) => String(v || "").toUpperCase().includes(q))));
+  };
+  const jumlahCab = (c) => ["pesan", "po"].reduce((a, id) => a + TABEL[id].baris.filter((r) => !c || r.cabang === c).length, 0);
+
+  function unduh(id) {
+    const t = TABEL[id], rows = urutkan(id, saring(id));
+    const sel = (v) => /[";\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v ?? "");
+    const isi = [t.kolom.map((k) => k[0]), ...rows.map((r) => t.kolom.map((k) => r[k[1]]))].map((b) => b.map(sel).join(";")).join("\r\n");
+    const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + isi], { type: "text/csv" })),
+      download: D.merek + " - " + t.judul + (S.cabang ? " - " + S.cabang : "") + ".csv" });
+    document.body.append(a); a.click(); a.remove();
+  }
+  function urutkan(id, rows) {
+    const u = S.urut[id]; if (!u) return rows;
+    const [k, arah] = u;
+    return [...rows].sort((a, b) => (typeof a[k] === "number" ? a[k] - b[k] : String(a[k] || "").localeCompare(String(b[k] || ""))) * arah);
+  }
+  function tabel(id) {
+    const t = TABEL[id], rows = urutkan(id, saring(id));
+    const kepala = el("tr", {}, t.kolom.map(([j, k, a]) => el("th", { class: a ? "a" : null, scope: "col", onclick: () => {
+      const u = S.urut[id]; S.urut[id] = [k, u && u[0] === k ? -u[1] : 1]; gambar(); }, text: j + (S.urut[id] && S.urut[id][0] === k ? (S.urut[id][1] > 0 ? " ▲" : " ▼") : "") })));
+    const badan = rows.length ? rows.map((r) => el("tr", {}, t.kolom.map(([, k, a]) => el("td", { class: a ? "a" : k === "nama" ? "nama" : null },
+      a ? nf.format(r[k]) : k === "tgl" ? tglId(r[k]) : k === "cabang" ? namaCab(r[k]) : k === "program" && r[k] ? el("span", { class: "pill", text: r[k] }) : r[k] || ""))))
+      : [el("tr", {}, el("td", { colspan: t.kolom.length, class: "kosong", text: "Tidak ada baris" + (S.cabang ? " untuk cabang " + namaCab(S.cabang) : "") + "." }))];
+    if (rows.length > 1) badan.push(el("tr", { class: "jumlah" }, t.kolom.map(([, k], i) => el("td", { class: k === t.jumlah ? "a" : null,
+      text: i === 0 ? "Jumlah (" + nf.format(rows.length) + " baris)" : k === t.jumlah ? nf.format(rows.reduce((s, r) => s + r[k], 0)) : "" }))));
+    return el("section", {}, el("h2", { text: t.judul }), el("p", { class: "ket", text: t.ket }),
+      el("div", { class: "alat" },
+        el("input", { type: "search", placeholder: "Cari kode / nama / nomor…", value: S.cari[id], "aria-label": "Cari di " + t.judul,
+          oninput: (e) => { S.cari[id] = e.target.value; const pos = e.target.selectionStart; gambar(); const n = document.querySelector('[data-cari="' + id + '"]'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }, "data-cari": id }),
+        el("button", { class: "unduh", type: "button", onclick: () => unduh(id), text: "Unduh Excel (CSV)" })),
+      el("div", { class: "gulir" }, el("table", {}, el("thead", {}, kepala), el("tbody", {}, badan))));
+  }
+  function kotak(l, n, k) { return el("div", { class: "kotak" }, el("div", { class: "l", text: l }), el("div", { class: "n", text: nf.format(n) }), el("div", { class: "k", text: k })); }
+  function keCabang(c) {
+    S.cabang = pilihCab(c);
+    try { const u = new URL(location.href); S.cabang == null ? u.searchParams.delete("cabang") : u.searchParams.set("cabang", S.cabang || "SEMUA"); history.replaceState(null, "", u); } catch (e) {}
+    gambar();
+    window.scrollTo(0, 0);
+  }
+  function menu() {
+    const unit = (c) => ["pesan", "po"].reduce((a, id) => a + TABEL[id].baris.filter((r) => !c || r.cabang === c).reduce((s, r) => s + (r.qty || r.sisa || 0), 0), 0);
+    const kartu = (c, nm, jenis) => {
+      const n = jumlahCab(c), u = unit(c);
+      return el("button", { class: "kartu-cab" + (n ? "" : " kosong-cab"), type: "button", onclick: () => keCabang(c) },
+        el("span", { class: "nm", text: nm }),
+        el("span", { class: "isi", text: n ? nf.format(u) + " unit · " + nf.format(n) + " baris" : "belum ada pesanan" }),
+        el("span", { class: "jenis", text: jenis }));
+    };
+    akar.replaceChildren(
+      el("h1", { text: "Pesanan Pembelian " + D.merek }),
+      el("p", { class: "sub", text: "PT Svarna Dipa · data per " + tglId(D.per) }),
+      el("div", { class: "label-menu", text: "Pilih cabang" }),
+      el("div", { class: "grid-cab" },
+        CABANG_TETAP.concat(cabangSemua.filter((c) => !CABANG_TETAP.includes(c))).map((c) =>
+          GABUNG[c] ? (() => { const k = kartu(GABUNG[c], c, "CABANG · DATA IKUT " + GABUNG[c]); return k; })() : kartu(c, c, "CABANG")),
+        kartu("", "SEMUA CABANG", "GABUNGAN")));
+  }
+  function gambar() {
+    if (S.cabang == null) return menu();
+    const sp = saring("pesan"), so = saring("po"), sd = saring("datang");
+    const sum = (rs, k) => rs.reduce((a, r) => a + r[k], 0);
+    akar.replaceChildren(
+      el("button", { class: "kembali", type: "button", onclick: () => keCabang(null), text: "‹ Pilih cabang" }),
+      el("h1", { text: (S.cabang ? namaCab(S.cabang) : "Semua cabang") + " · " + D.merek }),
+      el("p", { class: "sub", text: "Pesanan pembelian PT Svarna Dipa · data per " + tglId(D.per) + (S.cabang === "JAKARTA" ? " · termasuk Tangerang" : "") }),
+      el("div", { class: "chips", role: "group", "aria-label": "Ganti cabang" },
+        [["", "Semua cabang"], ...cabangSemua.map((c) => [c, namaCab(c)])].map(([c, n]) => el("button", { class: "chip", type: "button", "aria-pressed": String(S.cabang === c),
+          onclick: () => keCabang(c) }, n, el("b", { text: nf.format(jumlahCab(c)) })))),
+      el("div", { class: "ringkas" },
+        kotak("Pesanan bulan ini", sum(sp, "qty"), "unit · " + nf.format(sp.length) + " baris"),
+        kotak("PO belum datang", sum(so, "sisa"), "unit · " + nf.format(new Set(so.map((r) => r.nomor)).size) + " PO"),
+        kotak("Sudah diterima", sum(sd, "qty"), "unit sejak " + tglId(D.datang_dari))),
+      tabel("pesan"), tabel("po"), tabel("datang"));
+  }
+  gambar();
+})();
+</script>
+</body>
+</html>
+</template>
+
+<script>
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function buka(sandi) {
+    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('Data tidak bisa diambil (' + r.status + ')');
+    const p = await r.json();
+    const bahan = await crypto.subtle.importKey('raw', new TextEncoder().encode(sandi), 'PBKDF2', false, ['deriveKey']);
+    const kunci = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.garam), iterations: p.iter, hash: 'SHA-256' },
+      bahan, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    let polos;
+    try { polos = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, kunci, b64(p.isi)); }
+    catch (e) { throw new Error('Sandi salah. Coba lagi.'); }
+    const aliran = new Blob([polos]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(aliran).text());
+  }
+  // halaman dashboard membaca data/<nama>.json lewat fetch: dilayani dari paket yang sudah dibuka
+  function pasangHalaman(paket) {
+    const BERKAS = paket.berkas, asli = window.fetch.bind(window);
+    window.fetch = (u, o) => {
+      const p = String(u).split('?')[0].replace(/^\.\//, '');
+      if (p in BERKAS) return Promise.resolve(new Response(BERKAS[p], { headers: { 'content-type': 'application/json' } }));
+      if (p.startsWith('data/')) return Promise.resolve(new Response('', { status: 404 }));
+      return asli(u, o);
+    };
+    const isi = document.getElementById('isi');
+    const t = document.getElementById('halaman').content.cloneNode(true);
+    const skrip = [...t.querySelectorAll('script')];
+    skrip.forEach((s) => s.remove());
+    const judul = t.querySelector('title');
+    if (judul) { document.title = judul.textContent; judul.remove(); }
+    isi.appendChild(t);
+    isi.hidden = false;
+    skrip.forEach((s) => { const n = document.createElement('script'); n.textContent = s.textContent; isi.appendChild(n); });
+  }
+  document.getElementById('masuk').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const g = document.getElementById('galat');
+    g.textContent = 'Sedang membuka…';
+    try {
+      const paket = await buka(document.getElementById('sandi').value.replace(/\s+/g, '').toUpperCase());
+      document.getElementById('masuk').remove();
+      document.getElementById('webDibuat').textContent = new Date(paket.dibuat).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+      document.getElementById('webKaki').hidden = false;
+      pasangHalaman(paket);
+    } catch (e) {
+      g.textContent = e.message;
+      document.getElementById('sandi').value = '';
+      document.getElementById('sandi').focus();
+    }
+  });
+  document.getElementById('webKeluar').addEventListener('click', (e) => { e.preventDefault(); location.reload(); });
+</script>
+</body>
+</html>
